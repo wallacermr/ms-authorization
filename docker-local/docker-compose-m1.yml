@@ -1,0 +1,38 @@
+version: '3.7'
+services:
+    kong:
+        image: kong/kong-gateway:3.8.0.0
+#        image: kong:2.2.0
+        container_name: kong.authorization.dev
+        environment:
+            KONG_DATABASE: off
+            KONG_DECLARATIVE_CONFIG: /usr/local/kong/declarative/kong.yml
+            KONG_ADMIN_LISTEN: "0.0.0.0:8001"  # Admin API
+            KONG_PROXY_ACCESS_LOG: /dev/stdout
+            KONG_ADMIN_ACCESS_LOG: /dev/stdout
+            KONG_PROXY_ERROR_LOG: /dev/stderr
+            KONG_ADMIN_ERROR_LOG: /dev/stderr
+        healthcheck:
+            test: ["CMD", "kong", "health"]
+            interval: 10s
+            timeout: 10s
+            retries: 10
+        restart: on-failure
+        networks:
+            - study
+        deploy:
+            restart_policy:
+                condition: on-failure
+        ports:
+            - "8000:8000/tcp"  # Proxy port
+            - "8443:8443/tcp"  # Proxy SSL port
+            - "127.0.0.1:8001:8001/tcp"  # Admin API port
+            - "127.0.0.1:8444:8444/tcp"  # Admin API SSL port
+        volumes:
+            - ./kong.yml:/usr/local/kong/declarative/kong.yml
+
+
+networks:
+    study:
+        driver: bridge
+        external: true
