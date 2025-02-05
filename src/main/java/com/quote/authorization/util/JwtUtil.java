@@ -3,6 +3,7 @@ package com.quote.authorization.util;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
@@ -16,7 +17,7 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    private static final Key MY_SECRET_KEY = Keys.secretKeyFor(SignatureAlgorithm.HS256);
+    private final String SECRET_KEY = "mysecretkeymysecretkeymysecretkeymysecretkey"; // At least 256-bit key
 
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
@@ -28,8 +29,8 @@ public class JwtUtil {
             .setClaims(claims)
             .setSubject(subject)
             .setIssuedAt(new Date(System.currentTimeMillis()))
-            .setExpiration(new Date(System.currentTimeMillis() + 5000L))
-            .signWith(MY_SECRET_KEY)
+            .setExpiration(new Date(System.currentTimeMillis() + 10000))
+            .signWith(getSignInKey(), SignatureAlgorithm.HS256)
             .compact();
     }
 
@@ -53,14 +54,19 @@ public class JwtUtil {
 
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
-            .setSigningKey(MY_SECRET_KEY)
+            .setSigningKey(getSignInKey())
             .build()
-            .parseClaimsJwt(token)
+            .parseClaimsJws(token)
             .getBody();
     }
 
     private boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
+    }
+
+    private Key getSignInKey() {
+        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
 }
